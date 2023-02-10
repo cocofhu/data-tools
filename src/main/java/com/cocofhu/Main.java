@@ -25,7 +25,7 @@ public class Main {
         // 1.构建CsvSchema对象，在Calcite中，不同数据源对应不同Schema，比如CsvSchema、DruidSchema、ElasticsearchSchema等
         CsvSchema csvSchema = new CsvSchema(new File(path), CsvTable.Flavor.TRANSLATABLE);
 
-        RestClient restClient = RestClient.builder(new HttpHost("9.135.119.149", 9200)).build();
+        RestClient restClient = PrefixElasticsearchSchema.connect(Collections.singletonList(new HttpHost("9.135.119.149", 9200)),null,null,null);
         // 指定索引库
         PrefixElasticsearchSchema elasticsearchSchema = new PrefixElasticsearchSchema(restClient, new ObjectMapper(), 5196);
 

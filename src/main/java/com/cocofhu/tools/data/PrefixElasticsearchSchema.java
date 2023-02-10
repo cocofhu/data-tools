@@ -3,14 +3,21 @@ package com.cocofhu.tools.data;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
 import org.apache.calcite.util.Pair;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -100,5 +107,27 @@ public class PrefixElasticsearchSchema extends AbstractSchema {
             }
             return Sets.newHashSet(root.fieldNames());
         }
+    }
+
+
+    public static RestClient connect(List<HttpHost> hosts, String pathPrefix,
+                                      String username, String password) {
+        Objects.requireNonNull(hosts, "hosts or coordinates");
+        Preconditions.checkArgument(!hosts.isEmpty(), "no ES hosts specified");
+
+        RestClientBuilder builder = RestClient.builder(hosts.toArray(new HttpHost[0]));
+
+        if (!Strings.isNullOrEmpty(username) && !Strings.isNullOrEmpty(password)) {
+            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(AuthScope.ANY,
+                    new UsernamePasswordCredentials(username, password));
+            builder.setHttpClientConfigCallback(httpClientBuilder ->
+                    httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider));
+        }
+
+        if (pathPrefix != null && !pathPrefix.isEmpty()) {
+            builder.setPathPrefix(pathPrefix);
+        }
+        return builder.build();
     }
 }
