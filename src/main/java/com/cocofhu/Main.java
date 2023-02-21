@@ -1,6 +1,6 @@
 package com.cocofhu;
 
-import com.cocofhu.tools.data.PrefixElasticsearchSchema;
+import com.cocofhu.tools.data.schema.elasticsearch.PrefixElasticsearchSchema;
 import com.fasterxml.jackson.databind.ObjectMapper;
 //import org.apache.calcite.adapter.elasticsearch.ElasticsearchTransport;
 import org.apache.calcite.adapter.csv.CsvSchema;

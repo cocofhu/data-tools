@@ -1,4 +1,4 @@
-package com.cocofhu.tools.data;
+package com.cocofhu.tools.data.schema.elasticsearch;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -25,6 +25,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+/**
+ * 基于前缀的ElasticSearch Schema
+ *
+ */
 public class PrefixElasticsearchSchema extends AbstractSchema {
 
     private final RestClient client;
