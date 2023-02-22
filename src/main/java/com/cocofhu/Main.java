@@ -1,12 +1,19 @@
 package com.cocofhu;
 
+import com.cocofhu.tools.data.schema.MutableTableSchema;
 import com.cocofhu.tools.data.schema.elasticsearch.PrefixElasticsearchSchema;
+import com.cocofhu.tools.data.schema.file.csv.CSVTable;
 import com.fasterxml.jackson.databind.ObjectMapper;
 //import org.apache.calcite.adapter.elasticsearch.ElasticsearchTransport;
 import org.apache.calcite.adapter.csv.CsvSchema;
 import org.apache.calcite.adapter.csv.CsvTable;
+import org.apache.calcite.adapter.csv.CsvTableFactory;
 import org.apache.calcite.jdbc.CalciteConnection;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.schema.SchemaPlus;
+import org.apache.calcite.schema.impl.ViewTable;
+import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.util.ConversionUtil;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 
@@ -17,41 +24,34 @@ import java.util.*;
 public class Main {
 
 
+    static class A{
+
+    }
+    static class B extends A{}
 
     public static void main(String[] args) throws Exception, FileNotFoundException {
 
-        String path = Objects.requireNonNull(Objects.requireNonNull(Main.class.getClassLoader().getResource("testdata")).getPath());
+//        B[] b= new B[]{new B()};
+//        Object[] c = b;
+//        A[] a = (A[])c;
+//        System.out.println();
+//        if(true) return;
 
-        // 1.构建CsvSchema对象，在Calcite中，不同数据源对应不同Schema，比如CsvSchema、DruidSchema、ElasticsearchSchema等
-        CsvSchema csvSchema = new CsvSchema(new File(path), CsvTable.Flavor.TRANSLATABLE);
+        MutableTableSchema schema = new MutableTableSchema();
+        CSVTable table = new CSVTable(new File("/Users/hufeng/IdeaProjects/data-tools/src/main/resources/testdata/email.csv"),
+                CSVTable.RowTypeResolver.fromTypes(new String[]{"ID","EMAIL"}, new SqlTypeName[]{SqlTypeName.VARCHAR,SqlTypeName.VARCHAR}));
+        schema.putNewTable("EMAIL",table);
 
-        RestClient restClient = PrefixElasticsearchSchema.connect(Collections.singletonList(new HttpHost("9.135.119.149", 9200)),null,null,null);
-        // 指定索引库
-        PrefixElasticsearchSchema elasticsearchSchema = new PrefixElasticsearchSchema(restClient, new ObjectMapper(), 5196);
-
-
-        // 2.构建Connection
-        // 2.1 设置连接参数
         Properties info = new Properties();
-        // 不区分sql大小写
         info.setProperty("caseSensitive", "false");
-        // 2.2 获取标准的JDBC Connection
         Connection connection = DriverManager.getConnection("jdbc:calcite:", info);
-        // 2.3 获取Calcite封装的Connection
         CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
-
-        // 3.构建RootSchema，在Calcite中，RootSchema是所有数据源schema的parent，多个不同数据源schema可以挂在同一个RootSchema下
-        // 以实现查询不同数据源的目的
         SchemaPlus rootSchema = calciteConnection.getRootSchema();
-
-        // 4.将不同数据源schema挂载到RootSchema，这里添加CsvSchema
-//        rootSchema.add("dataset", refSchema);
-        rootSchema.add("es", elasticsearchSchema);
-        rootSchema.add("csv", csvSchema);
+        rootSchema.add("test", schema);
 
 
 
-        String sql = "select * from csv.email as email limit 0";
+        String sql = "select * from test.email";
 
 
 

@@ -27,7 +27,11 @@ import java.util.*;
 
 /**
  * 基于前缀的ElasticSearch Schema
- *
+ * <pre>
+ *         RestClient restClient = PrefixElasticsearchSchema.
+ *                 connect(Collections.singletonList(new HttpHost("IP", PORT)),null,null,null);
+ *         PrefixElasticsearchSchema schema = new PrefixElasticsearchSchema(restClient, new ObjectMapper(), 5196);
+ * </pre>
  */
 public class PrefixElasticsearchSchema extends AbstractSchema {
 
