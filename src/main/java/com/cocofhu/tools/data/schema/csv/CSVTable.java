@@ -1,27 +1,23 @@
-package com.cocofhu.tools.data.schema.file.csv;
+package com.cocofhu.tools.data.schema.csv;
 
 import org.apache.calcite.DataContext;
-import org.apache.calcite.adapter.csv.CsvFilterableTable;
 import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.linq4j.Enumerator;
-import org.apache.calcite.linq4j.function.Function2;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.FilterableTable;
 import org.apache.calcite.schema.impl.AbstractTable;
-import org.apache.calcite.sql.type.BasicSqlType;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.Pair;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class CSVTable extends AbstractTable implements FilterableTable {
 
@@ -31,6 +27,8 @@ public class CSVTable extends AbstractTable implements FilterableTable {
 
     private RelDataType relDataType;
 
+    private CSVFieldType[] fieldTypes;
+
     public CSVTable(File file, RowTypeResolver rowTypeResolver) {
         this.file = file;
         this.rowTypeResolver = rowTypeResolver;
@@ -39,12 +37,11 @@ public class CSVTable extends AbstractTable implements FilterableTable {
     @Override
     public Enumerable<Object[]> scan(DataContext root, List<RexNode> filters) {
         this.getRowType(root.getTypeFactory());
-        List<RelDataTypeField> fields = relDataType.getFieldList();
         return new AbstractEnumerable<Object[]>() {
             @Override
             public Enumerator<Object[]> enumerator() {
                 try {
-                    return new CSVEnumerator(new BufferedReader(new FileReader(file)),fields);
+                    return new CSVEnumerator(new BufferedReader(new FileReader(file)),fieldTypes);
                 } catch (FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
@@ -55,17 +52,22 @@ public class CSVTable extends AbstractTable implements FilterableTable {
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
         if(this.relDataType == null){
-            this.relDataType = rowTypeResolver.apply(this.file,typeFactory);
+            this.relDataType = rowTypeResolver.resolveRelDataTypes(this.file,typeFactory);
+            this.fieldTypes = rowTypeResolver.resolveFields(this.file,typeFactory).stream().map(e->e.right).toArray(CSVFieldType[]::new);
         }
-        System.out.println(relDataType);
         return relDataType;
     }
 
-    public interface RowTypeResolver extends Function2<File,RelDataTypeFactory,RelDataType>{
-        static RowTypeResolver fromTypes(String[] names, SqlTypeName[] types){
-            return (file, factory) -> factory.createStructType(Pair.zip(names,
-                    Arrays.stream(types).map(factory::createSqlType)
-                            .map(type->factory.createTypeWithNullability(type,true)).toArray(RelDataType[]::new)));
+    /**
+     *  表字段获取器：获取表的列名与列类型
+     */
+    @FunctionalInterface
+    public interface RowTypeResolver{
+
+        List<Pair<String,CSVFieldType>> resolveFields(File file, RelDataTypeFactory factory);
+        default RelDataType resolveRelDataTypes(File file, RelDataTypeFactory factory){
+            return factory.createStructType(resolveFields(file, factory).stream().map(pair -> new Pair<>(pair.left, Objects.requireNonNull(pair.right).toType(factory))).collect(Collectors.toList()));
         }
+
     }
 }

@@ -1,4 +1,4 @@
-package com.cocofhu.tools.data.schema.file.csv;
+package com.cocofhu.tools.data.schema.csv;
 
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;

@@ -1,21 +1,15 @@
 package com.cocofhu;
 
 import com.cocofhu.tools.data.schema.MutableTableSchema;
-import com.cocofhu.tools.data.schema.elasticsearch.PrefixElasticsearchSchema;
-import com.cocofhu.tools.data.schema.file.csv.CSVTable;
-import com.fasterxml.jackson.databind.ObjectMapper;
-//import org.apache.calcite.adapter.elasticsearch.ElasticsearchTransport;
-import org.apache.calcite.adapter.csv.CsvSchema;
-import org.apache.calcite.adapter.csv.CsvTable;
-import org.apache.calcite.adapter.csv.CsvTableFactory;
+import com.cocofhu.tools.data.schema.csv.CSVTable;
+import com.cocofhu.tools.data.schema.csv.CSVFieldType;
+import com.google.common.collect.Lists;
+import com.mysql.cj.jdbc.MysqlDataSource;
+import org.apache.calcite.adapter.jdbc.JdbcSchema;
 import org.apache.calcite.jdbc.CalciteConnection;
-import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
-import org.apache.calcite.schema.impl.ViewTable;
-import org.apache.calcite.sql.type.SqlTypeName;
-import org.apache.calcite.util.ConversionUtil;
-import org.apache.http.HttpHost;
-import org.elasticsearch.client.RestClient;
+import org.apache.calcite.util.Pair;
 
 import java.io.*;
 import java.sql.*;
@@ -24,41 +18,38 @@ import java.util.*;
 public class Main {
 
 
-    static class A{
-
-    }
-    static class B extends A{}
-
     public static void main(String[] args) throws Exception, FileNotFoundException {
+        Class.forName("org.apache.calcite.jdbc.Driver");
+        Class.forName("com.mysql.cj.jdbc.Driver");
 
-//        B[] b= new B[]{new B()};
-//        Object[] c = b;
-//        A[] a = (A[])c;
-//        System.out.println();
-//        if(true) return;
-
-        MutableTableSchema schema = new MutableTableSchema();
-        CSVTable table = new CSVTable(new File("/Users/hufeng/IdeaProjects/data-tools/src/main/resources/testdata/email.csv"),
-                CSVTable.RowTypeResolver.fromTypes(new String[]{"ID","EMAIL"}, new SqlTypeName[]{SqlTypeName.VARCHAR,SqlTypeName.VARCHAR}));
-        schema.putNewTable("EMAIL",table);
+//        MutableTableSchema schema = new MutableTableSchema();
+//        CSVTable table = new CSVTable(
+//                new File("/Users/hufeng/IdeaProjects/data-tools/src/main/resources/testdata/email.csv"),
+//                (file, factory) -> Lists.newArrayList(new Pair<>("id",CSVFieldType.INT),new Pair<>("email",CSVFieldType.STRING))
+//                );
+//        schema.putNewTable("EMAIL",table);
 
         Properties info = new Properties();
         info.setProperty("caseSensitive", "false");
         Connection connection = DriverManager.getConnection("jdbc:calcite:", info);
         CalciteConnection calciteConnection = connection.unwrap(CalciteConnection.class);
         SchemaPlus rootSchema = calciteConnection.getRootSchema();
-        rootSchema.add("test", schema);
+
+        // code for mysql datasource
+        MysqlDataSource dataSource = new MysqlDataSource();
 
 
+        // mysql schema, the sub schema for rootSchema, "test" is a schema in mysql
+        Schema jdbcSchema = JdbcSchema.create(rootSchema, "test", dataSource, null, "test");
 
-        String sql = "select * from test.email";
+        rootSchema.add("test", jdbcSchema);
 
 
+        String sql = "select * from test.emp";
 
-        //        String sql = "select * from csv.f where csv.f.name in (select name from csv.b) order by cnt";
-        // d.csv = 直播 e.csv cdn h gslb
+
         Statement statement = calciteConnection.createStatement();
-//        VolcanoPlanner
+
         System.out.println(System.currentTimeMillis());
         ResultSet resultSet = statement.executeQuery(sql);
         System.out.println(System.currentTimeMillis());
