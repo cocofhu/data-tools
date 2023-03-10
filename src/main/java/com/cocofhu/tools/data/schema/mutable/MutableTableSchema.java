@@ -1,4 +1,4 @@
-package com.cocofhu.tools.data.schema;
+package com.cocofhu.tools.data.schema.mutable;
 
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractSchema;
@@ -10,9 +10,8 @@ public class MutableTableSchema extends AbstractSchema {
 
     private final Map<String,Table> tableMap = new HashMap<>();
 
-    public MutableTableSchema putNewTable(String name,Table table){
+    public void putNewTable(String name,Table table){
         tableMap.put(name,table);
-        return this;
     }
 
     @Override

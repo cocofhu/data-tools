@@ -1,0 +1,41 @@
+[
+  {
+    "name" : "csv",
+    "tableDefinitions" : [
+      {
+        "name" : "dept",
+        "fields" :[
+          {
+            "name" : "id",
+            "type" : "int"
+          },
+          {
+            "name" : "name",
+            "type" : "string"
+          },
+          {
+            "name" : "city",
+            "type" : "string"
+          }
+        ],
+        "attributes" : {
+          "location" : "/Users/hufeng/IdeaProjects/data-tools/src/main/resources/db/dept.csv"
+        },
+        "initClass" : "com.cocofhu.tools.data.schema.csv.SimpleCSVTableInitializer"
+      }
+    ],
+    "attributes" : {
+      "bar" : "foo"
+    },
+    "initClass" : "com.cocofhu.tools.data.schema.mutable.MutableTableSchemaInitializer"
+  },
+  {
+    "name" : "mysql",
+    "attributes" : {
+      "username" : "root",
+      "password" : "",
+      "url" : ""
+    },
+    "initClass" : "com.cocofhu.tools.data.schema.mysql.MySQLSchemaInitializer"
+  }
+]

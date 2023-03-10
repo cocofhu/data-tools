@@ -70,7 +70,6 @@ public class CSVEnumerator implements Enumerator<Object[]> {
     @Override
     public void close() {
         try {
-            System.out.println("Close Stream...");
             reader.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
