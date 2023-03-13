@@ -5,6 +5,8 @@ import com.cocofhu.tools.data.schema.SchemaInitializer;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
+import de.vandermeer.asciitable.AsciiTable;
+import de.vandermeer.asciitable.CWC_LongestLine;
 import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.schema.SchemaPlus;
 
@@ -14,16 +16,27 @@ import java.util.*;
 
 public class Main {
 
+    static void showTable(List<List<Object>> objects){
+        AsciiTable table = new AsciiTable();
 
+        objects.forEach(row->{
+            table.addRule();
+            for (int i = 0; i < row.size(); i++) {
+                if(row.get(i) == null) row.set(i,"NULL");
+            }
+
+            table.addRow(row).setPadding(0).setPaddingRight(1);
+        });
+        table.addRule();
+        table.getRenderer().setCWC(new CWC_LongestLine());
+        System.out.println(table.render());
+    }
 
     public static void main(String[] args){
-
         Gson gson = new Gson();
-        try(FileReader reader = new FileReader("/Users/hufeng/IdeaProjects/data-tools/src/main/resources/config/config1.json")) {
+        try(FileReader reader = new FileReader("/Users/hufeng/IdeaProjects/data-tools/src/main/resources/config/config2.json")) {
             Class.forName("org.apache.calcite.jdbc.Driver");
-
             List<SchemaDefinition> schemaDefinitions = gson.fromJson(new JsonReader(reader), new TypeToken<List<SchemaDefinition>>() {}.getType());
-
             Properties info = new Properties();
             info.setProperty("caseSensitive", "false");
             Connection connection = DriverManager.getConnection("jdbc:calcite:", info);
@@ -46,13 +59,7 @@ public class Main {
                      ResultSet resultSet = statement.executeQuery(sql.toString())
                 ) {
                     List<List<Object>> lists = resultList(resultSet, true);
-                    lists.forEach(row -> {
-                        for (int i = 0; i < row.size(); i++) {
-                            if(i != 0) System.out.print(",");
-                            System.out.print(row.get(i));
-                        }
-                        System.out.println();
-                    });
+                    showTable(lists);
                 }catch (SQLException e){
                     System.out.printf("[ERROR #%d] %s. %n",e.getErrorCode(), e.getMessage());
                 }
@@ -70,7 +77,7 @@ public class Main {
         if (printHeader) {
             ArrayList<Object> header = new ArrayList<>();
             for (int i = 1; i <= columnCount; i++) {
-                header.add(metaData.getColumnName(i));
+                header.add(metaData.getColumnName(i) + ":" +metaData.getColumnType(i) );
             }
             results.add(header);
         }

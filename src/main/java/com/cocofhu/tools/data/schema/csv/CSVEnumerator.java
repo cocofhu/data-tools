@@ -14,7 +14,7 @@ public class CSVEnumerator implements Enumerator<Object[]> {
 
     private final CSVFieldType[] fields;
 
-    private final Object[] current;
+    private Object[] current;
 
 
     public CSVEnumerator(BufferedReader reader,CSVFieldType[] fields, Split split, AtomicBoolean cancelFlag) {
@@ -22,7 +22,6 @@ public class CSVEnumerator implements Enumerator<Object[]> {
         this.split = split;
         this.cancelFlag = cancelFlag;
         this.fields = fields;
-        this.current = new Object[fields.length];
     }
     public CSVEnumerator(BufferedReader reader,CSVFieldType[] fields, AtomicBoolean cancelFlag) {
         this(reader,fields, Split.COMMA,cancelFlag);
@@ -46,12 +45,14 @@ public class CSVEnumerator implements Enumerator<Object[]> {
             if(line == null){
                 return false;
             }
+            Object[] nextLine = new Object[fields.length];
             // 按照定义的列来处理，如果fields长度不足后面的数据将会忽略，如果数据不足则使用空值
             String[] row = this.split.split(line, fields.length);
             for (int i = 0; i < fields.length; i++) {
-                if(i < row.length) current[i] = fields[i].convert(row[i]);
-                else current[i] = null;
+                if(i < row.length) nextLine[i] = fields[i].convert(row[i]);
+                else nextLine[i] = null;
             }
+            current = nextLine;
             return true;
         } catch (IOException e) {
             throw new RuntimeException(e);
