@@ -8,21 +8,21 @@ import java.util.Map;
 
 
 public interface TableInitializer {
-    Table initCurrent(TableDefinition tableDefinition, Map<String,Object> initParams);
-    default Table initFully(TableDefinition tableDefinition, Map<String,Object> initParams){
-        if(isCurrentInitializer(tableDefinition, initParams)){
-            return initCurrent(tableDefinition,initParams);
+    Table initCurrent(TableDefinition tableDefinition, InitializerContext context);
+    default Table initFully(TableDefinition tableDefinition, InitializerContext context){
+        if(isCurrentInitializer(tableDefinition, context)){
+            return initCurrent(tableDefinition,context);
         }else{
             try {
                 Class<?> clazz = Class.forName(tableDefinition.getInitClass());
                 TableInitializer initializer = (TableInitializer) clazz.newInstance();
-                return initializer.initFully(tableDefinition,initParams);
+                return initializer.initFully(tableDefinition,context);
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new TableInitializationException(e,tableDefinition);
             }
         }
     }
-    default boolean isCurrentInitializer(TableDefinition tableDefinition, Map<String,Object> initParams){
+    default boolean isCurrentInitializer(TableDefinition tableDefinition, InitializerContext context){
         return (tableDefinition.getInitClass().equals(getClass().getName()));
     }
 

@@ -1,5 +1,12 @@
 package com.cocofhu.tools.data.schema.csv;
 
+import com.cocofhu.tools.data.factory.FieldDefinition;
+import com.cocofhu.tools.data.factory.TableDefinition;
+import com.cocofhu.tools.data.schema.InitializerContext;
+import com.cocofhu.tools.data.schema.MissingArgumentException;
+import com.cocofhu.tools.data.schema.TableInitializationException;
+import com.cocofhu.tools.data.schema.TableInitializer;
+import com.cocofhu.utils.CollectionUtils;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.linq4j.AbstractEnumerable;
 import org.apache.calcite.linq4j.Enumerable;
@@ -8,6 +15,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.FilterableTable;
+import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AbstractTable;
 import org.apache.calcite.util.Pair;
 
@@ -15,7 +23,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 

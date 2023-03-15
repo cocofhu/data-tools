@@ -1,5 +1,6 @@
 package com.cocofhu.tools.data.factory;
 
+import com.cocofhu.tools.data.schema.InitializerContext;
 import com.cocofhu.tools.data.schema.TableInitializationException;
 import com.cocofhu.tools.data.schema.TableInitializer;
 import lombok.Getter;
@@ -13,12 +14,12 @@ import java.util.Map;
 public class TableDefinition implements TableInitializer {
     private String name;
     private List<FieldDefinition> fields;
-    private Map<String,String> attributes;
+    private Map<String,Object> attributes;
     private String initClass;
 
 
     @Override
-    public Table initCurrent(TableDefinition tableDefinition, Map<String, Object> initParams) {
+    public Table initCurrent(TableDefinition tableDefinition, InitializerContext context) {
         throw new TableInitializationException(new UnsupportedOperationException("unsupported operation to initialize a table. "), tableDefinition);
     }
 }

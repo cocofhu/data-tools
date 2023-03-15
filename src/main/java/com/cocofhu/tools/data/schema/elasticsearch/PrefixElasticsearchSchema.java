@@ -33,7 +33,7 @@ import java.util.*;
  *         PrefixElasticsearchSchema schema = new PrefixElasticsearchSchema(restClient, new ObjectMapper(), 5196);
  * </pre>
  */
-public class PrefixElasticsearchSchema extends AbstractSchema {
+public class PrefixElasticsearchSchema extends AbstractSchema{
 
     private final RestClient client;
 
@@ -51,7 +51,7 @@ public class PrefixElasticsearchSchema extends AbstractSchema {
      * @param client existing client instance
      * @param mapper mapper for JSON (de)serialization
      */
-    public PrefixElasticsearchSchema(RestClient client, ObjectMapper mapper, int fetchSize) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+    public PrefixElasticsearchSchema(RestClient client, ObjectMapper mapper, int fetchSize, Map<String,String> tables) throws IOException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
         this.client = Objects.requireNonNull(client, "client");
         this.mapper = Objects.requireNonNull(mapper, "mapper");
@@ -59,14 +59,7 @@ public class PrefixElasticsearchSchema extends AbstractSchema {
                 "invalid fetch size. Expected %s > 0", fetchSize);
         this.fetchSize = fetchSize;
         Set<Pair<String,String>> prefixes = new HashSet<>();
-        Set<String> indices = indicesFromElastic();
-        indices.forEach(index -> {
-            for (int i = 0, len = index.length(); i < len; ++i) {
-                String prefix = index.substring(0,i+1);
-                String targetIndex =  i == len-1 ? prefix : (prefix + "*");
-                prefixes.add(new Pair<>(prefix, targetIndex));
-            }
-        });
+        tables.forEach((name,index)->prefixes.add(new Pair<>(name,index)));
         this.tableMap = createTables(prefixes);
     }
 

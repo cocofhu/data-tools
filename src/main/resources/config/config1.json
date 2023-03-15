@@ -21,13 +21,13 @@
         "attributes" : {
           "location" : "/Users/hufeng/IdeaProjects/data-tools/src/main/resources/db/dept.csv"
         },
-        "initClass" : "com.cocofhu.tools.data.schema.csv.SimpleCSVTableInitializer"
+        "initClass" : "com.cocofhu.tools.data.schema.csv.CSVTable"
       }
     ],
     "attributes" : {
       "bar" : "foo"
     },
-    "initClass" : "com.cocofhu.tools.data.schema.mutable.MutableTableSchemaInitializer"
+    "initClass" : "com.cocofhu.tools.data.schema.mutable.MutableTableSchema"
   },
   {
     "name" : "mysql",

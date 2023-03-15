@@ -8,24 +8,21 @@ import java.util.Map;
 
 public interface SchemaInitializer {
 
-    // SchemaPlus for jdbc initialization
-    String PARENT_SCHEMA = "PARENT_SCHEMA";
-
-    Schema initCurrent(SchemaDefinition schemaDefinition, Map<String,Object> initParams);
-    default Schema initFully(SchemaDefinition schemaDefinition, Map<String,Object> initParams){
-        if(isCurrentInitializer(schemaDefinition, initParams)){
-            return initCurrent(schemaDefinition, initParams);
+    Schema initCurrent(SchemaDefinition schemaDefinition, InitializerContext context);
+    default Schema initFully(SchemaDefinition schemaDefinition, InitializerContext context){
+        if(isCurrentInitializer(schemaDefinition, context)){
+            return initCurrent(schemaDefinition, context);
         }else{
             try {
                 Class<?> clazz = Class.forName(schemaDefinition.getInitClass());
                 SchemaInitializer initializer = (SchemaInitializer) clazz.newInstance();
-                return initializer.initFully(schemaDefinition, initParams);
+                return initializer.initFully(schemaDefinition, context);
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new SchemaInitializationException(e,schemaDefinition);
             }
         }
     }
-    default boolean isCurrentInitializer(SchemaDefinition schemaDefinition, Map<String,Object> initParams){
+    default boolean isCurrentInitializer(SchemaDefinition schemaDefinition, InitializerContext context){
         return (schemaDefinition.getInitClass().equals(getClass().getName()));
     }
 }
