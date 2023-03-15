@@ -28,6 +28,7 @@ import org.apache.calcite.rel.InvalidRelException;
 import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
+import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.rel.logical.LogicalFilter;
@@ -240,14 +241,26 @@ class ElasticsearchRules {
      */
     private static class ElasticsearchFilterRule extends ElasticsearchConverterRule {
 
-        Predicate<LogicalFilter> predicate = filter -> {
-            List<RelNode> inputs = new ArrayList<>();
-            if(!inputs.isEmpty()){
-                for (int i = 0; i < inputs.size(); i++) {
-
+        private static boolean testSubsetHasAggregate(RelNode node){
+            if(node instanceof RelSubset){
+                RelSubset subset = (RelSubset) node;
+                List<RelNode> list = subset.getRelList();
+                for (RelNode relNode : list) {
+                    if (testSubsetHasAggregate(relNode)) {
+                        return true;
+                    }
                 }
             }
+            return node instanceof Aggregate;
 
+        }
+
+        Predicate<LogicalFilter> predicate = filter -> {
+            List<RelNode> inputs = filter.getInputs();
+            for (RelNode relNode : inputs) {
+                // 可能是子查询或者是聚合查询条件
+                if( testSubsetHasAggregate(relNode) ) return false;
+            }
             return true;
         };
 
