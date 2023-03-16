@@ -38,10 +38,7 @@ public class Main {
             System.out.println();
         });
         Hook.PLAN_BEFORE_IMPLEMENTATION.add(rel -> {
-            System.out.println(RelOptUtil.dumpPlan("", ((RelRoot) rel).rel, SqlExplainFormat.TEXT, SqlExplainLevel.NON_COST_ATTRIBUTES));
-        });
-        Hook.CONVERTED.add(rel -> {
-            System.out.println(RelOptUtil.dumpPlan("", ((RelNode) rel), SqlExplainFormat.TEXT, SqlExplainLevel.NON_COST_ATTRIBUTES));
+            System.out.println(RelOptUtil.dumpPlan("Execution Plan", ((RelRoot) rel).rel, SqlExplainFormat.TEXT, SqlExplainLevel.NON_COST_ATTRIBUTES));
         });
         if (args.length < 1) {
             System.out.println("Please Specific a file of config.");

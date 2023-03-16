@@ -81,7 +81,6 @@ public class ElasticsearchTableScan extends TableScan implements ElasticsearchRe
 
   @Override public void register(RelOptPlanner planner) {
     planner.addRule(ElasticsearchToEnumerableConverterRule.INSTANCE);
-    planner.addRule(ElasticsearchToEnumerableConverterRule.HAVING_TO_MEM);
     for (RelOptRule rule: ElasticsearchRules.RULES) {
       planner.addRule(rule);
     }

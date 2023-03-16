@@ -16,29 +16,28 @@
  */
 package org.apache.calcite.adapter.elasticsearch;
 
+import org.apache.calcite.adapter.enumerable.EnumerableFilter;
 import org.apache.calcite.adapter.enumerable.RexImpTable;
 import org.apache.calcite.adapter.enumerable.RexToLixTranslator;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.interpreter.Bindables;
+import org.apache.calcite.linq4j.Enumerable;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.RelSubset;
-import org.apache.calcite.rel.InvalidRelException;
-import org.apache.calcite.rel.RelCollations;
-import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.*;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.Aggregate;
+import org.apache.calcite.rel.core.Filter;
+import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexCall;
-import org.apache.calcite.rex.RexInputRef;
-import org.apache.calcite.rex.RexLiteral;
-import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexVisitorImpl;
+import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
@@ -47,6 +46,7 @@ import org.apache.calcite.sql.validate.SqlValidatorUtil;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 /**
@@ -241,38 +241,75 @@ class ElasticsearchRules {
      */
     private static class ElasticsearchFilterRule extends ElasticsearchConverterRule {
 
-        private static boolean testSubsetHasAggregate(RelNode node){
+        private static boolean hasAggregate(RelNode node ){
+
             if(node instanceof RelSubset){
                 RelSubset subset = (RelSubset) node;
                 List<RelNode> list = subset.getRelList();
+//                EnumerableFilter]
+//                System.out.println("RelSubSet Instance" + subset);
+//                System.out.println("RelSubSet Input" + list);
                 for (RelNode relNode : list) {
-                    if (testSubsetHasAggregate(relNode)) {
+                    if (hasAggregate(relNode)) {
+                        return true;
+                    }
+                }
+            }else if(node instanceof LogicalProject){
+                Project project = (Project) node;
+                List<RelNode> inputs = project.getInputs();
+//                System.out.println("Project Instance" + project);
+//                System.out.println("Project Input" + inputs);
+                for (RelNode relNode : inputs) {
+                    if( hasAggregate(relNode) ) {
+                        return true;
+                    }
+                }
+            }else if(node instanceof LogicalFilter){
+                Filter filter = (Filter) node;
+                List<RelNode> inputs = filter.getInputs();
+                for (RelNode relNode : inputs) {
+                    if( hasAggregate(relNode) ) {
                         return true;
                     }
                 }
             }
             return node instanceof Aggregate;
-
         }
 
-        Predicate<LogicalFilter> predicate = filter -> {
-            List<RelNode> inputs = filter.getInputs();
-            for (RelNode relNode : inputs) {
-                // 可能是子查询或者是聚合查询条件
-                if( testSubsetHasAggregate(relNode) ) return false;
-            }
+        private static final Predicate<LogicalFilter> FILTER_PREDICATE = filter -> {
+//            List<RelNode> inputs = filter.getInputs();
+//            filter.getCondition().accept(new RexVisitorImpl<Void>(false){
+//                @Override
+//                public Void visitCall(RexCall call) {
+//                    System.out.println(call);
+//                    return super.visitCall(call);
+//                }
+//                @Override
+//                public void visitEach(Iterable<? extends RexNode> exprs) {
+//                    exprs.forEach(System.out::println);
+//                    super.visitEach(exprs);
+//                }
+//            });
+//            filter.getInputs().get(0).accept(new RexShuttle(){
+//                @Override
+//                public RexNode visitCall(RexCall call) {
+//                    System.out.println(call + "  ====");
+//                    return super.visitCall(call);
+//                }
+//            });
+//            System.out.println("=====");
+//            for (RelNode relNode : inputs) {
+//                // 可能是子查询或者是聚合查询条件
+//                if( hasAggregate(relNode) ) return false;
+//            }
             return true;
         };
 
         private static final ElasticsearchFilterRule INSTANCE = Config.INSTANCE
-                .withConversion(LogicalFilter.class, p -> {
-                            List<RelNode> inputs = p.getInputs();
-                            System.out.println(inputs);
-                            RelSubset relNode = (RelSubset) inputs.get(0);
-                            relNode.getConvention();
-                            return true;
-                        }, Convention.NONE,
-                        ElasticsearchRel.CONVENTION, "ElasticsearchFilterRule")
+                .withInTrait(Convention.NONE)
+                .withOutTrait(ElasticsearchRel.CONVENTION)
+                .withOperandSupplier(b0 -> b0.operand(LogicalFilter.class).oneInput(b1->b1.operand(ElasticsearchTableScan.class).anyInputs()))
+                .as(Config.class)
                 .withRuleFactory(ElasticsearchFilterRule::new)
                 .toRule(ElasticsearchFilterRule.class);
 

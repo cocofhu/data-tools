@@ -36,13 +36,6 @@ public class ElasticsearchToEnumerableConverterRule extends ConverterRule {
           "ElasticsearchToEnumerableConverterRule")
       .withRuleFactory(ElasticsearchToEnumerableConverterRule::new)
       .toRule(ElasticsearchToEnumerableConverterRule.class);
-  static final RelOptRule HAVING_TO_MEM = Config.INSTANCE
-          .withConversion(RelNode.class, ElasticsearchRel.CONVENTION,
-                  EnumerableConvention.INSTANCE,
-                  "ElasticsearchHavingToEnumerableConverterRule")
-          .withRuleFactory(ElasticsearchToEnumerableConverterRule::new).withOperandSupplier(b0 ->
-                  b0.operand(ElasticsearchFilter.class).oneInput(b1 ->
-                          b1.operand(ElasticsearchAggregate.class).anyInputs())).toRule();
   /** Called from the Config. */
   protected ElasticsearchToEnumerableConverterRule(Config config) {
     super(config);

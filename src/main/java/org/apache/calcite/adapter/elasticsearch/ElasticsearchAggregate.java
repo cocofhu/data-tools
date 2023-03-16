@@ -62,16 +62,7 @@ public class ElasticsearchAggregate extends Aggregate implements ElasticsearchRe
       List<ImmutableBitSet> groupSets,
       List<AggregateCall> aggCalls) throws InvalidRelException  {
     super(cluster, traitSet, ImmutableList.of(), input, groupSet, groupSets, aggCalls);
-
-    if (getConvention() != input.getConvention()) {
-      String message =
-          String.format(Locale.ROOT, "%s != %s", getConvention(),
-              input.getConvention());
-      throw new AssertionError(message);
-    }
-
-    assert getConvention() == input.getConvention();
-    assert getConvention() == ElasticsearchRel.CONVENTION;
+    // do not check convention
     assert this.groupSets.size() == 1 : "Grouping sets not supported";
 
     for (AggregateCall aggCall : aggCalls) {
