@@ -42,6 +42,7 @@ import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -71,6 +72,7 @@ class ElasticsearchRules {
      * @param call current relational expression
      * @return literal value
      */
+    @Nullable
     private static String isItemCall(RexCall call) {
         if (call.getOperator() != SqlStdOperatorTable.ITEM) {
             return null;
@@ -241,73 +243,10 @@ class ElasticsearchRules {
      */
     private static class ElasticsearchFilterRule extends ElasticsearchConverterRule {
 
-        private static boolean hasAggregate(RelNode node ){
-
-            if(node instanceof RelSubset){
-                RelSubset subset = (RelSubset) node;
-                List<RelNode> list = subset.getRelList();
-//                EnumerableFilter]
-//                System.out.println("RelSubSet Instance" + subset);
-//                System.out.println("RelSubSet Input" + list);
-                for (RelNode relNode : list) {
-                    if (hasAggregate(relNode)) {
-                        return true;
-                    }
-                }
-            }else if(node instanceof LogicalProject){
-                Project project = (Project) node;
-                List<RelNode> inputs = project.getInputs();
-//                System.out.println("Project Instance" + project);
-//                System.out.println("Project Input" + inputs);
-                for (RelNode relNode : inputs) {
-                    if( hasAggregate(relNode) ) {
-                        return true;
-                    }
-                }
-            }else if(node instanceof LogicalFilter){
-                Filter filter = (Filter) node;
-                List<RelNode> inputs = filter.getInputs();
-                for (RelNode relNode : inputs) {
-                    if( hasAggregate(relNode) ) {
-                        return true;
-                    }
-                }
-            }
-            return node instanceof Aggregate;
-        }
-
-        private static final Predicate<LogicalFilter> FILTER_PREDICATE = filter -> {
-//            List<RelNode> inputs = filter.getInputs();
-//            filter.getCondition().accept(new RexVisitorImpl<Void>(false){
-//                @Override
-//                public Void visitCall(RexCall call) {
-//                    System.out.println(call);
-//                    return super.visitCall(call);
-//                }
-//                @Override
-//                public void visitEach(Iterable<? extends RexNode> exprs) {
-//                    exprs.forEach(System.out::println);
-//                    super.visitEach(exprs);
-//                }
-//            });
-//            filter.getInputs().get(0).accept(new RexShuttle(){
-//                @Override
-//                public RexNode visitCall(RexCall call) {
-//                    System.out.println(call + "  ====");
-//                    return super.visitCall(call);
-//                }
-//            });
-//            System.out.println("=====");
-//            for (RelNode relNode : inputs) {
-//                // 可能是子查询或者是聚合查询条件
-//                if( hasAggregate(relNode) ) return false;
-//            }
-            return true;
-        };
-
         private static final ElasticsearchFilterRule INSTANCE = Config.INSTANCE
                 .withInTrait(Convention.NONE)
                 .withOutTrait(ElasticsearchRel.CONVENTION)
+                .withDescription("ElasticsearchFilterRule")
                 .withOperandSupplier(b0 -> b0.operand(LogicalFilter.class).oneInput(b1->b1.operand(ElasticsearchTableScan.class).anyInputs()))
                 .as(Config.class)
                 .withRuleFactory(ElasticsearchFilterRule::new)
@@ -366,8 +305,38 @@ class ElasticsearchRules {
      * to an {@link ElasticsearchProject}.
      */
     private static class ElasticsearchProjectRule extends ElasticsearchConverterRule {
+
+        private static final Predicate<LogicalProject> FILTER_UNSUPPORTED_PROJECT = project -> {
+            try {
+                project.getProjects().forEach(p -> p.accept(new RexVisitorImpl<Boolean>(true) {
+                    //Only ItemCall,Cast can be projected as ElasticsearchProject
+                    @Override
+                    public Boolean visitCall(RexCall call) {
+                        if (isItemCall(call) != null) {
+                            return true;
+                        }
+                        // note that cast(cast ...)
+                        if (call.getKind() == SqlKind.CAST) {
+                            return call.getOperands().get(0).accept(this);
+                        }
+                        if (call.getOperator() == SqlStdOperatorTable.ITEM) {
+                            final RexNode op1 = call.getOperands().get(1);
+                            if (op1 instanceof RexLiteral && op1.getType().getSqlTypeName() == SqlTypeName.INTEGER) {
+                                return true;
+                            }
+                        }
+                        // we will capture this below then return false;
+                        throw new UnsupportedOperationException("do not project it");
+                    }
+                }));
+                return true;
+            } catch (UnsupportedOperationException ignored) {
+                return false;
+            }
+        };
+
         private static final ElasticsearchProjectRule INSTANCE = Config.INSTANCE
-                .withConversion(LogicalProject.class, Convention.NONE,
+                .withConversion(LogicalProject.class, FILTER_UNSUPPORTED_PROJECT , Convention.NONE,
                         ElasticsearchRel.CONVENTION, "ElasticsearchProjectRule")
                 .withRuleFactory(ElasticsearchProjectRule::new)
                 .toRule(ElasticsearchProjectRule.class);
