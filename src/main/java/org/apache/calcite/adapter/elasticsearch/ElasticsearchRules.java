@@ -36,6 +36,7 @@ import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.logical.LogicalAggregate;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
+import org.apache.calcite.rel.logical.LogicalSort;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.*;
 import org.apache.calcite.sql.SqlKind;
@@ -57,7 +58,9 @@ import java.util.function.Predicate;
  */
 class ElasticsearchRules {
     static final RelOptRule[] RULES = {
-            ElasticsearchSortRule.INSTANCE,
+            // only two kind of sort rules can be converted
+            ElasticsearchSortRule.INSTANCE1,
+            ElasticsearchSortRule.INSTANCE2,
             ElasticsearchFilterRule.INSTANCE,
             ElasticsearchProjectRule.INSTANCE,
             ElasticsearchAggregateRule.INSTANCE
@@ -217,9 +220,22 @@ class ElasticsearchRules {
      * {@link ElasticsearchSort}.
      */
     private static class ElasticsearchSortRule extends ElasticsearchConverterRule {
-        private static final ElasticsearchSortRule INSTANCE = Config.INSTANCE
-                .withConversion(Sort.class, Convention.NONE,
-                        ElasticsearchRel.CONVENTION, "ElasticsearchSortRule")
+
+        private static final ElasticsearchSortRule INSTANCE1 = Config.INSTANCE
+                .withInTrait(Convention.NONE)
+                .withOutTrait(ElasticsearchRel.CONVENTION)
+                .withDescription("ElasticsearchSortRule1")
+                .withOperandSupplier(b0 -> b0.operand(LogicalSort.class).oneInput(b1->b1.operand(LogicalProject.class).oneInput(b2->b2.operand(ElasticsearchTableScan.class).anyInputs())))
+                .as(Config.class)
+                .withRuleFactory(ElasticsearchSortRule::new)
+                .toRule(ElasticsearchSortRule.class);
+
+        private static final ElasticsearchSortRule INSTANCE2 = Config.INSTANCE
+                .withInTrait(Convention.NONE)
+                .withOutTrait(ElasticsearchRel.CONVENTION)
+                .withDescription("ElasticsearchSortRule2")
+                .withOperandSupplier(b0 -> b0.operand(LogicalSort.class).oneInput(b1->b1.operand(LogicalProject.class).oneInput(b2->b2.operand(ElasticsearchFilter.class).anyInputs())))
+                .as(Config.class)
                 .withRuleFactory(ElasticsearchSortRule::new)
                 .toRule(ElasticsearchSortRule.class);
 
