@@ -1,13 +1,14 @@
 package com.cocofhu.tools.data.schema.elasticsearch;
 
 import com.cocofhu.tools.data.factory.SchemaDefinition;
-import com.cocofhu.tools.data.schema.InitializerContext;
+import com.cocofhu.tools.data.schema.Context;
 import com.cocofhu.tools.data.schema.MissingArgumentException;
 import com.cocofhu.tools.data.schema.SchemaInitializationException;
 import com.cocofhu.tools.data.schema.SchemaInitializer;
 import com.cocofhu.utils.CollectionUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.schema.Schema;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 
@@ -26,10 +27,10 @@ public class PrefixElasticsearchSchemaInitializer implements SchemaInitializer {
     public static final String TABLES = "tables";
     @Override
     @SuppressWarnings("unchecked")
-    public Schema initCurrent(SchemaDefinition schemaDefinition, InitializerContext context) {
-        Map<String, Object> attributes = schemaDefinition.getAttributes();
+    public Schema initCurrent(SchemaPlus root, SchemaDefinition definition, Context context) {
+        Map<String, Object> attributes = definition.getAttributes();
         CollectionUtils.notExistKeys(attributes,new String[]{HOST,USERNAME,PASSWORD,PORT,TABLES}, key->{
-            throw new SchemaInitializationException(new MissingArgumentException(String.format("missing argument of attributes: %s. ", key)), schemaDefinition);
+            throw new SchemaInitializationException(new MissingArgumentException(String.format("missing argument of attributes: %s. ", key)), definition);
         });
         String host = (String) attributes.get(HOST);
         String username = (String) attributes.get(USERNAME);

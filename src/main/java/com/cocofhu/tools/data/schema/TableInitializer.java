@@ -2,28 +2,29 @@ package com.cocofhu.tools.data.schema;
 
 
 import com.cocofhu.tools.data.factory.TableDefinition;
+import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
-
-import java.util.Map;
 
 
 public interface TableInitializer {
-    Table initCurrent(TableDefinition tableDefinition, InitializerContext context);
-    default Table initFully(TableDefinition tableDefinition, InitializerContext context){
-        if(isCurrentInitializer(tableDefinition, context)){
-            return initCurrent(tableDefinition,context);
-        }else{
+    Table initCurrent(SchemaPlus root, TableDefinition definition, Context context);
+
+    default Table initFully(SchemaPlus root, TableDefinition definition, Context context) {
+        if (isCurrentInitializer(root, definition, context)) {
+            return initCurrent(root, definition, context);
+        } else {
             try {
-                Class<?> clazz = Class.forName(tableDefinition.getInitClass());
+                Class<?> clazz = Class.forName(definition.getInitClass());
                 TableInitializer initializer = (TableInitializer) clazz.newInstance();
-                return initializer.initFully(tableDefinition,context);
+                return initializer.initFully(root, definition, context);
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new TableInitializationException(e,tableDefinition);
+                throw new TableInitializationException(e, definition);
             }
         }
     }
-    default boolean isCurrentInitializer(TableDefinition tableDefinition, InitializerContext context){
-        return (tableDefinition.getInitClass().equals(getClass().getName()));
+
+    default boolean isCurrentInitializer(SchemaPlus root, TableDefinition definition, Context context) {
+        return (definition.getInitClass().equals(getClass().getName()));
     }
 
 }

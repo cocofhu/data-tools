@@ -2,27 +2,30 @@ package com.cocofhu.tools.data.schema;
 
 import com.cocofhu.tools.data.factory.SchemaDefinition;
 import org.apache.calcite.schema.Schema;
-
-import java.util.Map;
+import org.apache.calcite.schema.SchemaPlus;
 
 
 public interface SchemaInitializer {
 
-    Schema initCurrent(SchemaDefinition schemaDefinition, InitializerContext context);
-    default Schema initFully(SchemaDefinition schemaDefinition, InitializerContext context){
-        if(isCurrentInitializer(schemaDefinition, context)){
-            return initCurrent(schemaDefinition, context);
-        }else{
+    default Schema initCurrent(SchemaPlus root, SchemaDefinition definition, Context context){
+        throw new SchemaInitializationException(new UnsupportedOperationException("unsupported operation to initialize a schema. "), definition);
+    }
+
+    default Schema initFully(SchemaPlus root, SchemaDefinition definition, Context context) {
+        if (isCurrentInitializer(root, definition, context)) {
+            return initCurrent(root, definition, context);
+        } else {
             try {
-                Class<?> clazz = Class.forName(schemaDefinition.getInitClass());
+                Class<?> clazz = Class.forName(definition.getInitClass());
                 SchemaInitializer initializer = (SchemaInitializer) clazz.newInstance();
-                return initializer.initFully(schemaDefinition, context);
+                return initializer.initFully(root, definition, context);
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new SchemaInitializationException(e,schemaDefinition);
+                throw new SchemaInitializationException(e, definition);
             }
         }
     }
-    default boolean isCurrentInitializer(SchemaDefinition schemaDefinition, InitializerContext context){
-        return (schemaDefinition.getInitClass().equals(getClass().getName()));
+
+    default boolean isCurrentInitializer(SchemaPlus root, SchemaDefinition definition, Context context) {
+        return (definition.getInitClass().equals(getClass().getName()));
     }
 }

@@ -1,7 +1,8 @@
 package com.cocofhu;
 
+import com.cocofhu.tools.data.Engine;
 import com.cocofhu.tools.data.factory.SchemaDefinition;
-import com.cocofhu.tools.data.schema.InitializerContext;
+import com.cocofhu.tools.data.schema.Context;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
@@ -30,7 +31,7 @@ public class Main {
         });
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException, IOException, ClassNotFoundException {
 
         Hook.QUERY_PLAN.add(request -> {
             System.out.println("Generated Request:");
@@ -47,26 +48,7 @@ public class Main {
             System.out.println("Please Specific a file of config.");
             return;
         }
-//        ElasticsearchFilter
-
-//        CsvTranslatableTable
-        CalciteConnection calciteConnection;
-        try (FileReader reader = new FileReader(args[0])) {
-            Class.forName("org.apache.calcite.jdbc.Driver");
-            Gson gson = new Gson();
-            List<SchemaDefinition> schemaDefinitions = gson.fromJson(new JsonReader(reader), new TypeToken<List<SchemaDefinition>>() {}.getType());
-            Properties info = new Properties();
-            info.setProperty("caseSensitive", "false");
-            Connection connection = DriverManager.getConnection("jdbc:calcite:", info);
-            calciteConnection = connection.unwrap(CalciteConnection.class);
-            SchemaPlus rootSchema = calciteConnection.getRootSchema();
-            InitializerContext context = new InitializerContext();
-            context.setAttribute(InitializerContext.PARENT_SCHEMA, rootSchema);
-            schemaDefinitions.forEach(schemaDefinition -> rootSchema.add(schemaDefinition.getName(), schemaDefinition.initFully(schemaDefinition, context)));
-        } catch (IOException | ClassNotFoundException | SQLException e) {
-            throw new RuntimeException(e);
-        }
-
+        Connection connection = Engine.instanceSingleConnectionWithCaseInsensitive(new File(args[0]), new Context());
         Scanner scanner = new Scanner(System.in);
         System.out.println("Data Tool Started.");
         StringBuilder sql = new StringBuilder();
@@ -76,7 +58,7 @@ public class Main {
             // waiting for next input line.
             if (!sql.toString().endsWith(";")) continue;
             sql = new StringBuilder(sql.toString().replace(";", ""));
-            try (Statement statement = calciteConnection.createStatement();
+            try (Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery(sql.toString())
             ) {
                 List<List<Object>> lists = resultList(resultSet, true);

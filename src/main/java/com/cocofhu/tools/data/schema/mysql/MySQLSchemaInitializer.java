@@ -1,7 +1,7 @@
 package com.cocofhu.tools.data.schema.mysql;
 
 import com.cocofhu.tools.data.factory.SchemaDefinition;
-import com.cocofhu.tools.data.schema.InitializerContext;
+import com.cocofhu.tools.data.schema.Context;
 import com.cocofhu.tools.data.schema.MissingArgumentException;
 import com.cocofhu.tools.data.schema.SchemaInitializationException;
 import com.cocofhu.tools.data.schema.SchemaInitializer;
@@ -12,7 +12,6 @@ import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 
 import java.util.Map;
-import java.util.Objects;
 
 public class MySQLSchemaInitializer implements SchemaInitializer {
 
@@ -20,13 +19,13 @@ public class MySQLSchemaInitializer implements SchemaInitializer {
     public static final String PASSWORD = "password";
     public static final String URL = "url";
 
+
     @Override
-    public Schema initCurrent(SchemaDefinition schemaDefinition, InitializerContext context) {
-        Map<String, Object> attributes = schemaDefinition.getAttributes();
+    public Schema initCurrent(SchemaPlus root, SchemaDefinition definition, Context context) {
+        Map<String, Object> attributes = definition.getAttributes();
         CollectionUtils.notExistKeys(attributes,new String[]{USERNAME,PASSWORD,URL},key->{
-            throw new SchemaInitializationException(new MissingArgumentException(String.format("missing argument of attributes: %s. ", key)), schemaDefinition);
+            throw new SchemaInitializationException(new MissingArgumentException(String.format("missing argument of attributes: %s. ", key)), definition);
         });
-        SchemaPlus parent = (SchemaPlus)Objects.requireNonNull(context.getAttribute(InitializerContext.PARENT_SCHEMA));
         String username = (String) attributes.get(USERNAME);
         String password = (String) attributes.get(PASSWORD);
         String url = (String) attributes.get(URL);
@@ -35,6 +34,6 @@ public class MySQLSchemaInitializer implements SchemaInitializer {
         dataSource.setUser(username);
         dataSource.setPassword(password);
         dataSource.setURL(url);
-        return JdbcSchema.create(parent ,schemaDefinition.getName(),dataSource,null,null);
+        return JdbcSchema.create(root ,definition.getName(),dataSource,null,null);
     }
 }
