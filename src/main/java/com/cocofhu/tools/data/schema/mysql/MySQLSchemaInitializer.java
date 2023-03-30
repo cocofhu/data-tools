@@ -1,6 +1,6 @@
 package com.cocofhu.tools.data.schema.mysql;
 
-import com.cocofhu.tools.data.factory.SchemaDefinition;
+import com.cocofhu.tools.data.schema.config.SchemaDefinition;
 import com.cocofhu.tools.data.schema.Context;
 import com.cocofhu.tools.data.schema.MissingArgumentException;
 import com.cocofhu.tools.data.schema.SchemaInitializationException;

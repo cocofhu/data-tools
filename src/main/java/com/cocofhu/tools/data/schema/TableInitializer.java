@@ -1,7 +1,7 @@
 package com.cocofhu.tools.data.schema;
 
 
-import com.cocofhu.tools.data.factory.TableDefinition;
+import com.cocofhu.tools.data.schema.config.TableDefinition;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
 

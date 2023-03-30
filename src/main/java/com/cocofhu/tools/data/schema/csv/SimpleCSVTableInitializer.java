@@ -1,7 +1,7 @@
 package com.cocofhu.tools.data.schema.csv;
 
-import com.cocofhu.tools.data.factory.FieldDefinition;
-import com.cocofhu.tools.data.factory.TableDefinition;
+import com.cocofhu.tools.data.schema.config.FieldDefinition;
+import com.cocofhu.tools.data.schema.config.TableDefinition;
 import com.cocofhu.tools.data.schema.Context;
 import com.cocofhu.tools.data.schema.MissingArgumentException;
 import com.cocofhu.tools.data.schema.TableInitializationException;

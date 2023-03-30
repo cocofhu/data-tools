@@ -44,85 +44,28 @@ import java.util.Set;
  */
 public class ElasticsearchSchema extends AbstractSchema {
 
-  private final RestClient client;
 
-  private final ObjectMapper mapper;
+    private final Map<String, Table> tableMap;
 
-  private final Map<String, Table> tableMap;
-
-  /**
-   * Default batch size to be used during scrolling.
-   */
-  private final int fetchSize;
-
-  /**
-   * Allows schema to be instantiated from existing elastic search client.
-   *
-   * @param client existing client instance
-   * @param mapper mapper for JSON (de)serialization
-   * @param index name of ES index
-   */
-  public ElasticsearchSchema(RestClient client, ObjectMapper mapper, String index) {
-    this(client, mapper, index, ElasticsearchTransport.DEFAULT_FETCH_SIZE);
-  }
-
-  @VisibleForTesting
-  ElasticsearchSchema(RestClient client, ObjectMapper mapper,
-                      String index, int fetchSize) {
-    super();
-    this.client = Objects.requireNonNull(client, "client");
-    this.mapper = Objects.requireNonNull(mapper, "mapper");
-    Preconditions.checkArgument(fetchSize > 0,
-        "invalid fetch size. Expected %s > 0", fetchSize);
-    this.fetchSize = fetchSize;
-
-    if (index == null) {
-      try {
-        this.tableMap = createTables(indicesFromElastic());
-      } catch (IOException e) {
-        throw new UncheckedIOException("Couldn't get indices", e);
-      }
-    } else {
-      this.tableMap = createTables(Collections.singleton(index));
+    public ElasticsearchSchema(RestClient client, ObjectMapper mapper, Map<String, String> indicesTableMap) {
+        this(client, mapper, indicesTableMap, ElasticsearchTransport.DEFAULT_FETCH_SIZE);
     }
-  }
 
-  @Override protected Map<String, Table> getTableMap() {
-    return tableMap;
-  }
-
-  private Map<String, Table> createTables(Iterable<String> indices) {
-    final ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
-    for (String index : indices) {
-      final ElasticsearchTransport transport =
-          new ElasticsearchTransport(client, mapper, index, fetchSize);
-      builder.put(index, new ElasticsearchTable(transport));
+    ElasticsearchSchema(RestClient client, ObjectMapper mapper,
+                        Map<String, String> indicesTableMap, int fetchSize) {
+        Preconditions.checkArgument(fetchSize > 0,
+                "invalid fetch size. Expected %s > 0", fetchSize);
+        final ImmutableMap.Builder<String, Table> builder = ImmutableMap.builder();
+        indicesTableMap.forEach((tableName, indexPattern) -> {
+            final ElasticsearchTransport transport =
+                    new ElasticsearchTransport(client, mapper, indexPattern, fetchSize);
+            builder.put(tableName, new ElasticsearchTable(transport));
+        });
+        this.tableMap = builder.build();
     }
-    return builder.build();
-  }
 
-  /**
-   * Queries {@code _alias} definition to automatically detect all indices.
-   *
-   * @return list of indices
-   * @throws IOException for any IO related issues
-   * @throws IllegalStateException if reply is not understood
-   */
-  private Set<String> indicesFromElastic() throws IOException {
-    final String endpoint = "/_alias";
-    final Response response = client.performRequest(new Request("GET", endpoint));
-    try (InputStream is = response.getEntity().getContent()) {
-      final JsonNode root = mapper.readTree(is);
-      if (!(root.isObject() && root.size() > 0)) {
-        final String message = String.format(Locale.ROOT, "Invalid response for %s/%s "
-            + "Expected object of at least size 1 got %s (of size %d)", response.getHost(),
-            response.getRequestLine(), root.getNodeType(), root.size());
-        throw new IllegalStateException(message);
-      }
-
-      Set<String> indices = Sets.newHashSet(root.fieldNames());
-      return indices;
+    @Override
+    protected Map<String, Table> getTableMap() {
+        return tableMap;
     }
-  }
-
 }

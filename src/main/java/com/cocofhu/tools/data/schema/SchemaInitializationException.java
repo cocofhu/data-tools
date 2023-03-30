@@ -1,7 +1,6 @@
 package com.cocofhu.tools.data.schema;
 
-import com.cocofhu.tools.data.factory.SchemaDefinition;
-import com.cocofhu.tools.data.factory.TableDefinition;
+import com.cocofhu.tools.data.schema.config.SchemaDefinition;
 import lombok.Getter;
 
 public class SchemaInitializationException extends RuntimeException {

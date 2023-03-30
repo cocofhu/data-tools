@@ -1,6 +1,6 @@
 package com.cocofhu.tools.data.schema;
 
-import com.cocofhu.tools.data.factory.SchemaDefinition;
+import com.cocofhu.tools.data.schema.config.SchemaDefinition;
 import org.apache.calcite.schema.Schema;
 import org.apache.calcite.schema.SchemaPlus;
 

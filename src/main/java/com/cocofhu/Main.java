@@ -1,17 +1,11 @@
 package com.cocofhu;
 
 import com.cocofhu.tools.data.Engine;
-import com.cocofhu.tools.data.factory.SchemaDefinition;
 import com.cocofhu.tools.data.schema.Context;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.google.gson.stream.JsonReader;
-import org.apache.calcite.jdbc.CalciteConnection;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelRoot;
 import org.apache.calcite.runtime.Hook;
-import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.sql.SqlExplainFormat;
 import org.apache.calcite.sql.SqlExplainLevel;
 
@@ -48,7 +42,7 @@ public class Main {
             System.out.println("Please Specific a file of config.");
             return;
         }
-        Connection connection = Engine.instanceSingleConnectionWithCaseInsensitive(new File(args[0]), new Context());
+        Connection connection = Engine.instanceSingleConnectionWithDefaultConfig(new File(args[0]), new Context());
         Scanner scanner = new Scanner(System.in);
         System.out.println("Data Tool Started.");
         StringBuilder sql = new StringBuilder();

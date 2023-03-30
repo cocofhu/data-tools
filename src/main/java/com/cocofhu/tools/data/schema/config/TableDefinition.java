@@ -1,4 +1,4 @@
-package com.cocofhu.tools.data.factory;
+package com.cocofhu.tools.data.schema.config;
 
 import com.cocofhu.tools.data.schema.Context;
 import com.cocofhu.tools.data.schema.TableInitializationException;

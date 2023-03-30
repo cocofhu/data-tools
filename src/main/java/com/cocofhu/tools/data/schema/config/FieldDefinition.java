@@ -1,4 +1,4 @@
-package com.cocofhu.tools.data.factory;
+package com.cocofhu.tools.data.schema.config;
 
 import lombok.Getter;
 

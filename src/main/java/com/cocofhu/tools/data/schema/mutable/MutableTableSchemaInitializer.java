@@ -1,6 +1,6 @@
 package com.cocofhu.tools.data.schema.mutable;
 
-import com.cocofhu.tools.data.factory.SchemaDefinition;
+import com.cocofhu.tools.data.schema.config.SchemaDefinition;
 import com.cocofhu.tools.data.schema.Context;
 import com.cocofhu.tools.data.schema.SchemaInitializer;
 import org.apache.calcite.schema.Schema;

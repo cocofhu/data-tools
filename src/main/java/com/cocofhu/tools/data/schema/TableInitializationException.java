@@ -1,6 +1,6 @@
 package com.cocofhu.tools.data.schema;
 
-import com.cocofhu.tools.data.factory.TableDefinition;
+import com.cocofhu.tools.data.schema.config.TableDefinition;
 import lombok.Getter;
 
 public class TableInitializationException extends RuntimeException {
