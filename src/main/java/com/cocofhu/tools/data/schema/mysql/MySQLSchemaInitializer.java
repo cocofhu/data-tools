@@ -26,6 +26,9 @@ public class MySQLSchemaInitializer implements SchemaInitializer {
         CollectionUtils.notExistKeys(attributes,new String[]{USERNAME,PASSWORD,URL},key->{
             throw new SchemaInitializationException(new MissingArgumentException(String.format("missing argument of attributes: %s. ", key)), definition);
         });
+        if(definition.getTableDefinitions() != null){
+            throw new SchemaInitializationException(new UnsupportedOperationException("custom tables are not supported for mysql schema. "), definition);
+        }
         String username = (String) attributes.get(USERNAME);
         String password = (String) attributes.get(PASSWORD);
         String url = (String) attributes.get(URL);
